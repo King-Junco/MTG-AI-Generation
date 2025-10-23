@@ -52,6 +52,63 @@ function App() {
     }
   };
   
+  // Generate AI prompt string
+  const generatePromptString = () => {
+    const colorNames = selectedColors.map(c => colors.find(col => col.id === c)?.name.toLowerCase()).join(' ');
+    return `${colorNames} ${deckTheme.toLowerCase()} ${deckPowerLevel}`;
+  };
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedCards, setGeneratedCards] = useState([]);
+
+  const handleGenerateDeck = async () => {
+    const promptString = generatePromptString();
+    console.log('=== Deck Generation ===');
+    console.log('Prompt for AI:', promptString);
+    console.log('Number of cards:', numCards);
+    console.log('======================');
+    
+    setIsGenerating(true);
+    setGeneratedCards([]);
+    
+    try {
+      // Replace 'YOUR_HF_API_TOKEN' with your actual Hugging Face API token
+      const HF_API_TOKEN = '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';
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/minimaxir/magic-the-gathering',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${HF_API_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inputs: promptString,
+            parameters: {
+              max_length: 30,
+              num_return_sequences: parseInt(numCards),
+              temperature: 0.8,
+            }
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('Generated cards:', result);
+      setGeneratedCards(result);
+      
+    } catch (error) {
+      console.error('Error generating cards:', error);
+      alert('Failed to generate cards. Please check the console for details.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
       {/* Header */}
@@ -386,9 +443,27 @@ function App() {
                 color="dark" 
                 size="md"
                 style={{ height: '48px' }}
+                onClick={handleGenerateDeck}
+                loading={isGenerating}
               >
-                Generate {numCards} Card {selectedColors.map(c => colors.find(col => col.id === c)?.name).join('/')} Deck
+                {isGenerating ? 'Generating...' : `Generate ${numCards} Card ${selectedColors.map(c => colors.find(col => col.id === c)?.name).join('/')} Deck`}
               </Button>
+              
+              {/* Generated Cards Display */}
+              {generatedCards.length > 0 && (
+                <Paper withBorder p="md" mt="lg">
+                  <Text fw={500} mb="md">Generated Cards:</Text>
+                  <Stack gap="sm">
+                    {generatedCards.map((card, index) => (
+                      <Paper key={index} withBorder p="sm" style={{ backgroundColor: '#f8f9fa' }}>
+                        <Text size="xs" style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                          {card.generated_text || JSON.stringify(card)}
+                        </Text>
+                      </Paper>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
             </Paper>
           </Grid.Col>
         </Grid>
