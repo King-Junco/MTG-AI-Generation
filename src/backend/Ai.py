@@ -110,7 +110,7 @@ def home():
         }
     })
 
-
+# hi i did something
 if __name__ == '__main__':
     try:
         print("Starting MTG Card Generator API...")
