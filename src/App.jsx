@@ -18,6 +18,216 @@ import {
 } from '@mantine/core';
 import { IconWand, IconAlertCircle } from '@tabler/icons-react';
 
+// ========== CONFIGURATION ==========
+const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
+const TEMPERATURE = 0.8;  // Controls randomness (0.0 = deterministic, 1.0 = creative)
+// ===================================
+
+// Parse MTG card text into structured data
+function parseCardText(cardText) {
+  const original = cardText.trim();
+  
+  // Initialize defaults
+  let name = 'Unknown Card';
+  let manaCost = '';
+  let cardType = 'Unknown';
+  let subtype = '';
+  let power = '';
+  let toughness = '';
+  let rulesText = '';
+  
+  // Extract mana cost (pattern: {X}{Y})
+  const manaMatch = original.match(/\{[^\}]+\}/g);
+  if (manaMatch) {
+    manaCost = manaMatch.join('');
+  }
+  
+  // Extract power/toughness (patterns: 32, 3/2, or at start of text)
+  const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || // 32 format
+                  original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||        // 3/2 format
+                  original.match(/^(\d+)(\d+)\s/);                    // Start of line
+  if (ptMatch) {
+    power = ptMatch[1];
+    toughness = ptMatch[2];
+  }
+  
+  // Extract card type (Creature, Instant, Sorcery, etc.)
+  const creatureMatch = original.match(/Creature\s*[—-]\s*([A-Za-z\s]+?)(?=\s*[\.\n]|$)/i);
+  if (creatureMatch) {
+    cardType = 'Creature';
+    subtype = creatureMatch[1].trim();
+  } else if (original.match(/\bInstant\b/i)) {
+    cardType = 'Instant';
+  } else if (original.match(/\bSorcery\b/i)) {
+    cardType = 'Sorcery';
+  } else if (original.match(/\bEnchantment\b/i)) {
+    cardType = 'Enchantment';
+  } else if (original.match(/\bArtifact\b/i)) {
+    cardType = 'Artifact';
+  } else if (original.match(/\bLand\b/i)) {
+    cardType = 'Land';
+  }
+  
+  // Extract card name (usually capitalized words at the end, or after card type)
+  // Try to find name after creature type or at the end
+  const namePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$/;
+  const nameMatch = original.match(namePattern);
+  if (nameMatch && nameMatch[1].length > 2 && nameMatch[1].length < 50) {
+    name = nameMatch[1];
+  }
+  
+  // Build rules text - remove mana cost, power/toughness, type line, and name
+  let cleanedText = original;
+  
+  // Remove mana cost
+  if (manaCost) {
+    cleanedText = cleanedText.replace(manaCost, '');
+  }
+  
+  // Remove power/toughness
+  if (power && toughness) {
+    cleanedText = cleanedText.replace(`${power}${toughness}`, '').replace(`${power}/${toughness}`, '');
+  }
+  
+  // Remove card type line
+  if (creatureMatch) {
+    cleanedText = cleanedText.replace(creatureMatch[0], '');
+  } else {
+    cleanedText = cleanedText.replace(/\b(Instant|Sorcery|Enchantment|Artifact|Land)\b/i, '');
+  }
+  
+  // Remove name
+  if (name !== 'Unknown Card') {
+    cleanedText = cleanedText.replace(name, '');
+  }
+  
+  // Clean up the rules text
+  rulesText = cleanedText
+    .replace(/\s+/g, ' ')  // Normalize whitespace
+    .replace(/^\s*[\.\,\-]+\s*/, '')  // Remove leading punctuation
+    .trim();
+  
+  // If rules text is too short or empty, use original
+  if (rulesText.length < 10) {
+    rulesText = original;
+  }
+  
+  return {
+    name,
+    manaCost,
+    cardType,
+    subtype,
+    rulesText,
+    power,
+    toughness,
+    rawText: original
+  };
+}
+
+// Card display component
+function MTGCard({ cardData, index }) {
+  const parsed = parseCardText(cardData);
+  
+  // Determine color based on mana cost
+  let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)'; // Colorless/Artifact
+  if (parsed.manaCost.includes('{R}')) bgGradient = 'linear-gradient(to bottom, #fecaca, #fee2e2)'; // Red
+  if (parsed.manaCost.includes('{U}')) bgGradient = 'linear-gradient(to bottom, #bfdbfe, #dbeafe)'; // Blue
+  if (parsed.manaCost.includes('{G}')) bgGradient = 'linear-gradient(to bottom, #bbf7d0, #dcfce7)'; // Green
+  if (parsed.manaCost.includes('{W}')) bgGradient = 'linear-gradient(to bottom, #fef3c7, #fef9c3)'; // White
+  if (parsed.manaCost.includes('{B}')) bgGradient = 'linear-gradient(to bottom, #d1d5db, #e5e7eb)'; // Black
+  
+  return (
+    <Paper
+      shadow="lg"
+      style={{
+        width: '280px',
+        border: '4px solid #000',
+        borderRadius: '12px',
+        overflow: 'hidden'
+      }}
+    >
+      <Box p="md" style={{ background: bgGradient }}>
+        {/* Header: Name and Mana Cost */}
+        <Group justify="space-between" mb="xs" align="flex-start">
+          <Text fw={700} size="md" style={{ flex: 1, lineHeight: 1.2 }}>
+            {parsed.name}
+          </Text>
+          <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap' }}>
+            {parsed.manaCost || '{?}'}
+          </Text>
+        </Group>
+        
+        {/* Image placeholder */}
+        <Box
+          mb="sm"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(0,0,0,0.1))',
+            height: '140px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(0,0,0,0.1)'
+          }}
+        >
+          <Text size="xs" c="dimmed">Card Artwork</Text>
+        </Box>
+        
+        {/* Type Line */}
+        <Text 
+          size="sm" 
+          fw={600}
+          style={{ 
+            borderBottom: '2px solid #000', 
+            paddingBottom: '4px', 
+            marginBottom: '8px' 
+          }}
+        >
+          {parsed.cardType}
+          {parsed.subtype && ` — ${parsed.subtype}`}
+        </Text>
+        
+        {/* Rules Text */}
+        <Box mb="sm" style={{ minHeight: '60px' }}>
+          {parsed.rulesText ? (
+            parsed.rulesText.split('\n').map((line, i) => (
+              <Text key={i} size="xs" mb={3}>
+                {line}
+              </Text>
+            ))
+          ) : (
+            <Text size="xs" c="dimmed" fs="italic">
+              No rules text
+            </Text>
+          )}
+        </Box>
+        
+        {/* Power/Toughness */}
+        {parsed.power && parsed.toughness && (
+          <Box 
+            style={{ 
+              textAlign: 'right',
+              background: 'rgba(0,0,0,0.05)',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              marginTop: '8px'
+            }}
+          >
+            <Text fw={700} size="xl">
+              {parsed.power}/{parsed.toughness}
+            </Text>
+          </Box>
+        )}
+        
+        {/* Card number badge */}
+        <Badge size="xs" variant="light" mt="xs">
+          Card #{index + 1}
+        </Badge>
+      </Box>
+    </Paper>
+  );
+}
+
 function App() {
   // Single card state
   const [powerLevel, setPowerLevel] = useState('balanced');
@@ -32,10 +242,10 @@ function App() {
   const [flavorText, setFlavorText] = useState('Born from storm clouds and fury.');
   
   // Deck generator state
-  const [deckTheme, setDeckTheme] = useState('Dragons & Fire');
+  const [deckTheme, setDeckTheme] = useState('dragons');
   const [selectedColors, setSelectedColors] = useState(['red']);
-  const [deckPowerLevel, setDeckPowerLevel] = useState('balanced');
-  const [numCards, setNumCards] = useState('15');
+  const [deckPowerLevel, setDeckPowerLevel] = useState('');
+  const [numCards, setNumCards] = useState('5');
   
   const colors = [
     { id: 'red', name: 'Red', symbol: 'R', description: 'Aggression, fire, lightning', color: '#EF4444' },
@@ -53,17 +263,21 @@ function App() {
     }
   };
   
-  // Generate AI prompt string
+  // Generate AI prompt string - simpler format
   const generatePromptString = () => {
-    const colorNames = selectedColors.map(c => colors.find(col => col.id === c)?.name.toLowerCase()).join(' ');
-    return `${colorNames} ${deckTheme.toLowerCase()} ${deckPowerLevel}`;
+    // Just use color symbols, simpler for the AI
+    const colorSymbols = selectedColors.map(c => {
+      const color = colors.find(col => col.id === c);
+      return `{${color.symbol}}`;
+    }).join('');
+    
+    return colorSymbols || '{C}'; // {C} for colorless if no colors selected
   };
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCards, setGeneratedCards] = useState([]);
   const [error, setError] = useState(null);
 
-  // UPDATED: Connect to Flask backend instead of Hugging Face API
   const handleGenerateDeck = async () => {
     const promptString = generatePromptString();
     console.log('=== Deck Generation ===');
@@ -76,7 +290,6 @@ function App() {
     setError(null);
     
     try {
-      // Connect to local Flask backend
       const BACKEND_URL = 'http://localhost:5000';
       
       const response = await fetch(`${BACKEND_URL}/generate`, {
@@ -87,8 +300,8 @@ function App() {
         body: JSON.stringify({
           prompt: promptString,
           num_cards: parseInt(numCards),
-          temperature: 0.8,
-          max_length: 30  // Same as your example
+          temperature: TEMPERATURE,
+          max_length: MAX_LENGTH
         })
       });
       
@@ -349,15 +562,19 @@ function App() {
 
               {/* Deck Theme */}
               <Select
-                label="Deck Theme"
+                label="Deck Theme (Optional)"
                 value={deckTheme}
                 onChange={setDeckTheme}
+                placeholder="No theme"
+                clearable
                 data={[
-                  'Dragons & Fire',
-                  'Tribal Warriors',
-                  'Spell Control',
-                  'Token Swarm',
-                  'Graveyard Recursion'
+                  'dragons',
+                  'warriors',
+                  'wizards',
+                  'zombies',
+                  'elves',
+                  'angels',
+                  'demons'
                 ]}
                 mb="lg"
               />
@@ -468,21 +685,21 @@ function App() {
                 </Text>
               )}
               
-              {/* Generated Cards Display */}
+              {/* Generated Cards Display - Card Format */}
               {generatedCards.length > 0 && (
-                <Paper withBorder p="md" mt="lg">
+                <Box mt="lg">
                   <Text fw={500} mb="md">Generated Cards ({generatedCards.length}):</Text>
-                  <Stack gap="sm">
+                  <Box style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '16px',
+                    justifyContent: 'center'
+                  }}>
                     {generatedCards.map((cardText, index) => (
-                      <Paper key={index} withBorder p="sm" style={{ backgroundColor: '#f8f9fa' }}>
-                        <Badge size="xs" mb="xs">Card {index + 1}</Badge>
-                        <Text size="xs" style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                          {cardText}
-                        </Text>
-                      </Paper>
+                      <MTGCard key={index} cardData={cardText} index={index} />
                     ))}
-                  </Stack>
-                </Paper>
+                  </Box>
+                </Box>
               )}
             </Paper>
           </Grid.Col>
@@ -527,4 +744,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
