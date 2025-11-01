@@ -13,9 +13,10 @@ import {
   Grid,
   Checkbox,
   Badge,
-  Box
+  Box,
+  Alert
 } from '@mantine/core';
-import { IconWand } from '@tabler/icons-react';
+import { IconWand, IconAlertCircle } from '@tabler/icons-react';
 
 function App() {
   // Single card state
@@ -60,7 +61,9 @@ function App() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCards, setGeneratedCards] = useState([]);
+  const [error, setError] = useState(null);
 
+  // UPDATED: Connect to Flask backend instead of Hugging Face API
   const handleGenerateDeck = async () => {
     const promptString = generatePromptString();
     console.log('=== Deck Generation ===');
@@ -70,40 +73,42 @@ function App() {
     
     setIsGenerating(true);
     setGeneratedCards([]);
+    setError(null);
     
     try {
-      // Replace 'YOUR_HF_API_TOKEN' with your actual Hugging Face API token
-      const HF_API_TOKEN = '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';
-      const response = await fetch(
-        'https://api-inference.huggingface.co/models/minimaxir/magic-the-gathering',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${HF_API_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inputs: promptString,
-            parameters: {
-              max_length: 30,
-              num_return_sequences: parseInt(numCards),
-              temperature: 0.8,
-            }
-          })
-        }
-      );
+      // Connect to local Flask backend
+      const BACKEND_URL = 'http://localhost:5000';
+      
+      const response = await fetch(`${BACKEND_URL}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: promptString,
+          num_cards: parseInt(numCards),
+          temperature: 0.8,
+          max_length: 30  // Same as your example
+        })
+      });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Backend error: ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('Generated cards:', result);
-      setGeneratedCards(result);
+      console.log('Backend response:', result);
+      
+      if (result.success && result.cards) {
+        setGeneratedCards(result.cards);
+      } else {
+        throw new Error('Invalid response from backend');
+      }
       
     } catch (error) {
       console.error('Error generating cards:', error);
-      alert('Failed to generate cards. Please check the console for details.');
+      setError(error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -335,6 +340,13 @@ function App() {
                 <Title order={2}>Deck Generator</Title>
               </Group>
 
+              {/* Error Alert */}
+              {error && (
+                <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red" mb="md" onClose={() => setError(null)} withCloseButton>
+                  {error}
+                </Alert>
+              )}
+
               {/* Deck Theme */}
               <Select
                 label="Deck Theme"
@@ -445,19 +457,27 @@ function App() {
                 style={{ height: '48px' }}
                 onClick={handleGenerateDeck}
                 loading={isGenerating}
+                disabled={selectedColors.length === 0}
               >
                 {isGenerating ? 'Generating...' : `Generate ${numCards} Card ${selectedColors.map(c => colors.find(col => col.id === c)?.name).join('/')} Deck`}
               </Button>
               
+              {selectedColors.length === 0 && (
+                <Text size="xs" c="red" mt="xs">
+                  Please select at least one color
+                </Text>
+              )}
+              
               {/* Generated Cards Display */}
               {generatedCards.length > 0 && (
                 <Paper withBorder p="md" mt="lg">
-                  <Text fw={500} mb="md">Generated Cards:</Text>
+                  <Text fw={500} mb="md">Generated Cards ({generatedCards.length}):</Text>
                   <Stack gap="sm">
-                    {generatedCards.map((card, index) => (
+                    {generatedCards.map((cardText, index) => (
                       <Paper key={index} withBorder p="sm" style={{ backgroundColor: '#f8f9fa' }}>
+                        <Badge size="xs" mb="xs">Card {index + 1}</Badge>
                         <Text size="xs" style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                          {card.generated_text || JSON.stringify(card)}
+                          {cardText}
                         </Text>
                       </Paper>
                     ))}
@@ -507,4 +527,4 @@ function App() {
   );
 }
 
-export default App;
+export default App
