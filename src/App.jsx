@@ -23,6 +23,21 @@ const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
 const TEMPERATURE = 0.8;  // Controls randomness (0.0 = deterministic, 1.0 = creative)
 // ===================================
 
+
+function formatCardFromBackend(cardObj) {
+  // Backend already gives us structured data
+  return {
+    name: cardObj.name || 'Unknown Card',
+    manaCost: cardObj.manaCost || '',
+    cardType: cardObj.type || 'Unknown',
+    subtype: '', // Extract if needed
+    rulesText: cardObj.text || '',
+    power: cardObj.power || '',
+    toughness: cardObj.toughness || '',
+    rawText: cardObj._raw || ''
+  };
+}
+
 // Parse MTG card text into structured data
 function parseCardText(cardText) {
   const original = cardText.trim();
@@ -126,7 +141,31 @@ function parseCardText(cardText) {
 
 // Card display component
 function MTGCard({ cardData, index }) {
-  const parsed = parseCardText(cardData);
+  //const parsed = parseCardText(cardData);
+  
+  let parsed;
+
+  if (typeof cardData === 'object' && cardData !== null) {
+    parsed = formatCardFromBackend(cardData);
+  }
+
+  else if (typeof cardData === 'string') {
+    parsed = parseCardText(cardData);
+  }
+
+  else {
+    console.error('Invalid card data:', cardData);
+    parsed = {
+      name: 'Error',
+      manaCost: '',
+      cardType: 'Unknown',
+      subtype: '',
+      rulesText: 'Invalid card data',
+      power: '',
+      toughness: '',
+      rawText: ''
+    }
+  }
   
   // Determine color based on mana cost
   let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)'; // Colorless/Artifact
