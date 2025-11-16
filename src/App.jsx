@@ -318,50 +318,60 @@ function App() {
   const [error, setError] = useState(null);
 
   const handleGenerateDeck = async () => {
-    const promptString = generatePromptString();
+    let prompt = deckTheme || 'creature';
+
+    const manaCost = selectedColors.map(c => {
+      const color = colors.find(col => col.id === c);
+      return `{${color.symbol}}`;
+    }).join('');
+
     console.log('=== Deck Generation ===');
-    console.log('Prompt for AI:', promptString);
+    console.log('Prompt for AI:', prompt);
     console.log('Number of cards:', numCards);
     console.log('======================');
-    
+
     setIsGenerating(true);
     setGeneratedCards([]);
     setError(null);
-    
+
     try {
       const BACKEND_URL = 'http://localhost:5000';
-      
+
       const response = await fetch(`${BACKEND_URL}/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: promptString,
+          prompt: prompt,
+          mana_cost: manaCost,
           num_cards: parseInt(numCards),
           temperature: TEMPERATURE,
           max_length: MAX_LENGTH
         })
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Backend error: ${response.status}`);
       }
-      
+
       const result = await response.json();
       console.log('Backend response:', result);
-      
+
       if (result.success && result.cards) {
         setGeneratedCards(result.cards);
-      } else {
+      }
+      else {
         throw new Error('Invalid response from backend');
       }
-      
-    } catch (error) {
+
+    }
+    catch (error) {
       console.error('Error generating cards:', error);
       setError(error.message);
-    } finally {
+    }
+    finally {
       setIsGenerating(false);
     }
   };
