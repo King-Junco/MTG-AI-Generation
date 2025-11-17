@@ -17,6 +17,32 @@ import {
   Alert
 } from '@mantine/core';
 import { IconWand, IconAlertCircle } from '@tabler/icons-react';
+import image1 from './pictures/Magic cards/1-1000/001.jpg';
+import image2 from './pictures/Magic cards/1-1000/002.jpg';
+import image3 from './pictures/Magic cards/1-1000/003.jpg';
+const images = [
+  image1,
+  image2,
+  image3,
+]
+
+//useEffect(() => changeImage(), [])
+
+{/*export function RandomWelcomePicture() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(Math.floor(Math.random() * images.length))
+  const changeImage = () => {
+    const randomNumber = Math.floor(Math.random() * images.length);
+    setCurrentImageIndex(randomNumber);
+  }
+  useEffect(() => changeImage(), [])
+
+  return (
+    <Image
+        source={images[currentImageIndex]}
+        style={styles.imageStyle}
+    />
+  )
+}*/}
 
 // ========== CONFIGURATION ==========
 const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
@@ -156,6 +182,7 @@ function MTGCard({ cardData, index }) {
             {parsed.manaCost || '{?}'}
           </Text>
         </Group>
+
         
         {/* Image placeholder */}
         <Box
@@ -170,6 +197,10 @@ function MTGCard({ cardData, index }) {
             border: '1px solid rgba(0,0,0,0.1)'
           }}
         >
+        {/*  <img src={ require('./src/pictures/Magic cards/1-1000/001.jpg')} /> 
+          import image1 from './pictures/Magic cards/1-1000/001.jpg';*/}
+          CONST pict_string = 'image2'
+          <img src={image3} /> 
           <Text size="xs" c="dimmed">Card Artwork</Text>
         </Box>
         
