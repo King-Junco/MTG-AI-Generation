@@ -26,6 +26,10 @@ const images = [
   image3,
 ]
 
+
+render(<Button />, document.getElementById('container'));
+
+
 //useEffect(() => changeImage(), [])
 
 {/*export function RandomWelcomePicture() {
