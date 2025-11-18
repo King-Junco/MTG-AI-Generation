@@ -20,14 +20,24 @@ import { IconWand, IconAlertCircle } from '@tabler/icons-react';
 import image1 from './pictures/Magic cards/1-1000/001.jpg';
 import image2 from './pictures/Magic cards/1-1000/002.jpg';
 import image3 from './pictures/Magic cards/1-1000/003.jpg';
+import image4 from './pictures/Magic cards/1-1000/004.jpg';
+import image5 from './pictures/Magic cards/1-1000/005.jpg';
+import image6 from './pictures/Magic cards/1-1000/006.jpg';
+
 const images = [
   image1,
   image2,
   image3,
+  image4,
+  image5,
+  image6,
 ]
+const randomIndex = Math.floor(Math.random() * images.length);
+
+const randomElement = images[randomIndex];
 
 
-render(<Button />, document.getElementById('container'));
+//render(<Button />, document.getElementById('container'));
 
 
 //useEffect(() => changeImage(), [])
@@ -172,7 +182,8 @@ function parseCardText(cardText) {
 // Card display component
 function MTGCard({ cardData, index }) {
   //const parsed = parseCardText(cardData);
-  
+  const randomIndex = Math.floor(Math.random() * images.length);
+  const randomElement = images[randomIndex];
   let parsed;
 
   if (typeof cardData === 'object' && cardData !== null) {
@@ -242,9 +253,8 @@ function MTGCard({ cardData, index }) {
         >
         {/*  <img src={ require('./src/pictures/Magic cards/1-1000/001.jpg')} /> 
           import image1 from './pictures/Magic cards/1-1000/001.jpg';*/}
-          CONST pict_string = 'image2'
-          <img src={image3} /> 
-          <Text size="xs" c="dimmed">Card Artwork</Text>
+          
+          <img src={randomElement} /> 
         </Box>
         
         {/* Type Line */}
