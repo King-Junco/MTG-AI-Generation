@@ -59,18 +59,16 @@ const randomElement = images[randomIndex];
 }*/}
 
 // ========== CONFIGURATION ==========
-const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
-const TEMPERATURE = 0.8;  // Controls randomness (0.0 = deterministic, 1.0 = creative)
+const MAX_LENGTH = 100;
+const TEMPERATURE = 0.8;
 // ===================================
 
-
 function formatCardFromBackend(cardObj) {
-  // Backend already gives us structured data
   return {
     name: cardObj.name || 'Unknown Card',
     manaCost: cardObj.manaCost || '',
     cardType: cardObj.type || 'Unknown',
-    subtype: '', // Extract if needed
+    subtype: '',
     rulesText: cardObj.text || '',
     power: cardObj.power || '',
     toughness: cardObj.toughness || '',
@@ -78,11 +76,9 @@ function formatCardFromBackend(cardObj) {
   };
 }
 
-// Parse MTG card text into structured data
 function parseCardText(cardText) {
   const original = cardText.trim();
   
-  // Initialize defaults
   let name = 'Unknown Card';
   let manaCost = '';
   let cardType = 'Unknown';
@@ -91,22 +87,19 @@ function parseCardText(cardText) {
   let toughness = '';
   let rulesText = '';
   
-  // Extract mana cost (pattern: {X}{Y})
   const manaMatch = original.match(/\{[^\}]+\}/g);
   if (manaMatch) {
     manaCost = manaMatch.join('');
   }
   
-  // Extract power/toughness (patterns: 32, 3/2, or at start of text)
-  const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || // 32 format
-                  original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||        // 3/2 format
-                  original.match(/^(\d+)(\d+)\s/);                    // Start of line
+  const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || 
+                  original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||
+                  original.match(/^(\d+)(\d+)\s/);
   if (ptMatch) {
     power = ptMatch[1];
     toughness = ptMatch[2];
   }
   
-  // Extract card type (Creature, Instant, Sorcery, etc.)
   const creatureMatch = original.match(/Creature\s*[—-]\s*([A-Za-z\s]+?)(?=\s*[\.\n]|$)/i);
   if (creatureMatch) {
     cardType = 'Creature';
@@ -123,46 +116,37 @@ function parseCardText(cardText) {
     cardType = 'Land';
   }
   
-  // Extract card name (usually capitalized words at the end, or after card type)
-  // Try to find name after creature type or at the end
   const namePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$/;
   const nameMatch = original.match(namePattern);
   if (nameMatch && nameMatch[1].length > 2 && nameMatch[1].length < 50) {
     name = nameMatch[1];
   }
   
-  // Build rules text - remove mana cost, power/toughness, type line, and name
   let cleanedText = original;
   
-  // Remove mana cost
   if (manaCost) {
     cleanedText = cleanedText.replace(manaCost, '');
   }
   
-  // Remove power/toughness
   if (power && toughness) {
     cleanedText = cleanedText.replace(`${power}${toughness}`, '').replace(`${power}/${toughness}`, '');
   }
   
-  // Remove card type line
   if (creatureMatch) {
     cleanedText = cleanedText.replace(creatureMatch[0], '');
   } else {
     cleanedText = cleanedText.replace(/\b(Instant|Sorcery|Enchantment|Artifact|Land)\b/i, '');
   }
   
-  // Remove name
   if (name !== 'Unknown Card') {
     cleanedText = cleanedText.replace(name, '');
   }
   
-  // Clean up the rules text
   rulesText = cleanedText
-    .replace(/\s+/g, ' ')  // Normalize whitespace
-    .replace(/^\s*[\.\,\-]+\s*/, '')  // Remove leading punctuation
+    .replace(/\s+/g, ' ')
+    .replace(/^\s*[\.\,\-]+\s*/, '')
     .trim();
   
-  // If rules text is too short or empty, use original
   if (rulesText.length < 10) {
     rulesText = original;
   }
@@ -179,22 +163,16 @@ function parseCardText(cardText) {
   };
 }
 
-// Card display component
 function MTGCard({ cardData, index }) {
-  //const parsed = parseCardText(cardData);
   const randomIndex = Math.floor(Math.random() * images.length);
   const randomElement = images[randomIndex];
   let parsed;
 
   if (typeof cardData === 'object' && cardData !== null) {
     parsed = formatCardFromBackend(cardData);
-  }
-
-  else if (typeof cardData === 'string') {
+  } else if (typeof cardData === 'string') {
     parsed = parseCardText(cardData);
-  }
-
-  else {
+  } else {
     console.error('Invalid card data:', cardData);
     parsed = {
       name: 'Error',
@@ -208,13 +186,12 @@ function MTGCard({ cardData, index }) {
     }
   }
   
-  // Determine color based on mana cost
-  let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)'; // Colorless/Artifact
-  if (parsed.manaCost.includes('{R}')) bgGradient = 'linear-gradient(to bottom, #fecaca, #fee2e2)'; // Red
-  if (parsed.manaCost.includes('{U}')) bgGradient = 'linear-gradient(to bottom, #bfdbfe, #dbeafe)'; // Blue
-  if (parsed.manaCost.includes('{G}')) bgGradient = 'linear-gradient(to bottom, #bbf7d0, #dcfce7)'; // Green
-  if (parsed.manaCost.includes('{W}')) bgGradient = 'linear-gradient(to bottom, #fef3c7, #fef9c3)'; // White
-  if (parsed.manaCost.includes('{B}')) bgGradient = 'linear-gradient(to bottom, #d1d5db, #e5e7eb)'; // Black
+  let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)';
+  if (parsed.manaCost.includes('{R}')) bgGradient = 'linear-gradient(to bottom, #fecaca, #fee2e2)';
+  if (parsed.manaCost.includes('{U}')) bgGradient = 'linear-gradient(to bottom, #bfdbfe, #dbeafe)';
+  if (parsed.manaCost.includes('{G}')) bgGradient = 'linear-gradient(to bottom, #bbf7d0, #dcfce7)';
+  if (parsed.manaCost.includes('{W}')) bgGradient = 'linear-gradient(to bottom, #fef3c7, #fef9c3)';
+  if (parsed.manaCost.includes('{B}')) bgGradient = 'linear-gradient(to bottom, #d1d5db, #e5e7eb)';
   
   return (
     <Paper
@@ -227,7 +204,6 @@ function MTGCard({ cardData, index }) {
       }}
     >
       <Box p="md" style={{ background: bgGradient }}>
-        {/* Header: Name and Mana Cost */}
         <Group justify="space-between" mb="xs" align="flex-start">
           <Text fw={700} size="md" style={{ flex: 1, lineHeight: 1.2 }}>
             {parsed.name}
@@ -237,8 +213,6 @@ function MTGCard({ cardData, index }) {
           </Text>
         </Group>
 
-        
-        {/* Image placeholder */}
         <Box
           mb="sm"
           style={{
@@ -251,13 +225,9 @@ function MTGCard({ cardData, index }) {
             border: '1px solid rgba(0,0,0,0.1)'
           }}
         >
-        {/*  <img src={ require('./src/pictures/Magic cards/1-1000/001.jpg')} /> 
-          import image1 from './pictures/Magic cards/1-1000/001.jpg';*/}
-          
-          <img src={randomElement} /> 
+          <img src={randomElement} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Card art" />
         </Box>
         
-        {/* Type Line */}
         <Text 
           size="sm" 
           fw={600}
@@ -271,7 +241,6 @@ function MTGCard({ cardData, index }) {
           {parsed.subtype && ` — ${parsed.subtype}`}
         </Text>
         
-        {/* Rules Text */}
         <Box mb="sm" style={{ minHeight: '60px' }}>
           {parsed.rulesText ? (
             parsed.rulesText.split('\n').map((line, i) => (
@@ -286,7 +255,6 @@ function MTGCard({ cardData, index }) {
           )}
         </Box>
         
-        {/* Power/Toughness */}
         {parsed.power && parsed.toughness && (
           <Box 
             style={{ 
@@ -303,7 +271,6 @@ function MTGCard({ cardData, index }) {
           </Box>
         )}
         
-        {/* Card number badge */}
         <Badge size="xs" variant="light" mt="xs">
           Card #{index + 1}
         </Badge>
@@ -313,7 +280,6 @@ function MTGCard({ cardData, index }) {
 }
 
 function App() {
-  // Single card state
   const [powerLevel, setPowerLevel] = useState('balanced');
   const [cardType, setCardType] = useState('Creature');
   const [cardName, setCardName] = useState('Lightning Drake');
@@ -325,7 +291,6 @@ function App() {
   const [rulesText, setRulesText] = useState('Flying\nWhenever Lightning Drake attacks, it deals 1 damage to any target.');
   const [flavorText, setFlavorText] = useState('Born from storm clouds and fury.');
   
-  // Deck generator state
   const [deckTheme, setDeckTheme] = useState('dragons');
   const [selectedColors, setSelectedColors] = useState(['red']);
   const [deckPowerLevel, setDeckPowerLevel] = useState('');
@@ -347,17 +312,6 @@ function App() {
     }
   };
   
-  // Generate AI prompt string - simpler format
-  const generatePromptString = () => {
-    // Just use color symbols, simpler for the AI
-    const colorSymbols = selectedColors.map(c => {
-      const color = colors.find(col => col.id === c);
-      return `{${color.symbol}}`;
-    }).join('');
-    
-    return colorSymbols || '{C}'; // {C} for colorless if no colors selected
-  };
-  
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCards, setGeneratedCards] = useState([]);
   const [error, setError] = useState(null);
@@ -365,7 +319,7 @@ function App() {
   const handleGenerateDeck = async () => {
     let prompt = deckTheme || 'creature';
 
-    const manaCost = selectedColors.map(c => {
+    const manaCostStr = selectedColors.map(c => {
       const color = colors.find(col => col.id === c);
       return `{${color.symbol}}`;
     }).join('');
@@ -389,7 +343,7 @@ function App() {
         },
         body: JSON.stringify({
           prompt: prompt,
-          mana_cost: manaCost,
+          mana_cost: manaCostStr,
           num_cards: parseInt(numCards),
           temperature: TEMPERATURE,
           max_length: MAX_LENGTH
@@ -406,17 +360,14 @@ function App() {
 
       if (result.success && result.cards) {
         setGeneratedCards(result.cards);
-      }
-      else {
+      } else {
         throw new Error('Invalid response from backend');
       }
 
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error generating cards:', error);
       setError(error.message);
-    }
-    finally {
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -437,12 +388,13 @@ function App() {
 
       {/* Main Content */}
       <Container size="xl" py="xl">
-        <Grid>
-          {/* Left Column - Single Card Designer */}
-          <Grid.Col span={{ base: 12, lg: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md">
-              <Title order={2} mb="lg">Single Card Designer</Title>
-              
+        {/* Single Card Designer - Full Width on Top */}
+        <Paper shadow="sm" p="lg" radius="md" mb="xl">
+          <Title order={2} mb="lg">Single Card Designer</Title>
+          
+          <Grid>
+            {/* Left side - Form inputs */}
+            <Grid.Col span={{ base: 12, lg: 7 }}>
               {/* Power Level */}
               <Select
                 label="Power Level"
@@ -460,7 +412,6 @@ function App() {
               <Paper withBorder p="md" mb="md">
                 <Text fw={500} mb="md">Card Designer</Text>
                 
-                {/* Card Type Buttons */}
                 <Group mb="md">
                   {['Creature', 'Instant', 'Artifact'].map((type) => (
                     <Button
@@ -475,7 +426,6 @@ function App() {
                   ))}
                 </Group>
 
-                {/* Card Name */}
                 <TextInput
                   label="Card Name"
                   value={cardName}
@@ -483,7 +433,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Mana Cost and Rarity */}
                 <Grid mb="md">
                   <Grid.Col span={6}>
                     <TextInput
@@ -502,7 +451,6 @@ function App() {
                   </Grid.Col>
                 </Grid>
 
-                {/* Card Type and Subtype */}
                 <Grid mb="md">
                   <Grid.Col span={6}>
                     <Select
@@ -521,7 +469,6 @@ function App() {
                   </Grid.Col>
                 </Grid>
 
-                {/* Power and Toughness */}
                 {cardType === 'Creature' && (
                   <Grid mb="md">
                     <Grid.Col span={6}>
@@ -541,7 +488,6 @@ function App() {
                   </Grid>
                 )}
 
-                {/* Rules Text */}
                 <Textarea
                   label="Rules Text"
                   value={rulesText}
@@ -550,7 +496,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Flavor Text */}
                 <Textarea
                   label="Flavor Text (Optional)"
                   value={flavorText}
@@ -559,7 +504,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Card Artwork */}
                 <Stack gap="xs">
                   <Text size="sm" fw={500}>Card Artwork</Text>
                   <Button variant="default" fullWidth style={{ height: '60px' }}>
@@ -570,9 +514,11 @@ function App() {
                   </Text>
                 </Stack>
               </Paper>
+            </Grid.Col>
 
-              {/* Card Preview */}
-              <Box style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Right side - Card Preview */}
+            <Grid.Col span={{ base: 12, lg: 5 }}>
+              <Box style={{ display: 'flex', justifyContent: 'center', position: 'sticky', top: '20px' }}>
                 <Paper
                   shadow="lg"
                   style={{
@@ -593,7 +539,6 @@ function App() {
                       <Text size="sm">{manaCost}</Text>
                     </Group>
                     
-                    {/* Image placeholder */}
                     <Box
                       mb="sm"
                       style={{
@@ -636,25 +581,26 @@ function App() {
                   </Box>
                 </Paper>
               </Box>
-            </Paper>
-          </Grid.Col>
+            </Grid.Col>
+          </Grid>
+        </Paper>
 
-          {/* Right Column - Deck Generator */}
-          <Grid.Col span={{ base: 12, lg: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md">
+        {/* Deck Generator - Full Width Below */}
+        <Paper shadow="sm" p="lg" radius="md" mb="xl">
+          <Grid>
+            {/* Left side - Deck Generator Controls */}
+            <Grid.Col span={{ base: 12, lg: 7 }}>
               <Group mb="lg">
                 <IconWand size={20} />
                 <Title order={2}>Deck Generator</Title>
               </Group>
 
-              {/* Error Alert */}
               {error && (
                 <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red" mb="md" onClose={() => setError(null)} withCloseButton>
                   {error}
                 </Alert>
               )}
 
-              {/* Deck Theme */}
               <Select
                 label="Deck Theme (Optional)"
                 value={deckTheme}
@@ -673,7 +619,6 @@ function App() {
                 mb="lg"
               />
 
-              {/* Deck Colors */}
               <Stack gap="sm" mb="lg">
                 <Group justify="space-between">
                   <Text fw={500} size="sm">
@@ -733,7 +678,6 @@ function App() {
                 </Stack>
               </Stack>
 
-              {/* Power Level */}
               <Select
                 label="Power Level"
                 value={deckPowerLevel}
@@ -746,7 +690,6 @@ function App() {
                 mb="lg"
               />
 
-              {/* Number of Cards */}
               <TextInput
                 label="Number of Cards"
                 type="number"
@@ -760,7 +703,6 @@ function App() {
                 Rarity distribution: ~50% Common, ~30% Uncommon, ~15% Rare, ~5% Mythic
               </Text>
 
-              {/* Generate Button */}
               <Button 
                 fullWidth 
                 color="dark" 
@@ -778,26 +720,51 @@ function App() {
                   Please select at least one color
                 </Text>
               )}
-              
-              {/* Generated Cards Display - Card Format */}
-              {generatedCards.length > 0 && (
-                <Box mt="lg">
-                  <Text fw={500} mb="md">Generated Cards ({generatedCards.length}):</Text>
-                  <Box style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: '16px',
-                    justifyContent: 'center'
-                  }}>
-                    {generatedCards.map((cardText, index) => (
-                      <MTGCard key={index} cardData={cardText} index={index} />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Paper>
-          </Grid.Col>
-        </Grid>
+            </Grid.Col>
+
+            {/* Right side - Preview/Info */}
+            <Grid.Col span={{ base: 12, lg: 5 }}>
+              <Paper withBorder p="md" style={{ position: 'sticky', top: '20px' }}>
+                <Text fw={500} mb="sm">Generator Settings</Text>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Selected Colors:</Text>
+                    <Text size="sm" fw={500}>
+                      {selectedColors.length > 0 
+                        ? selectedColors.map(c => colors.find(col => col.id === c)?.symbol).join(', ')
+                        : 'None'}
+                    </Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Number of Cards:</Text>
+                    <Text size="sm" fw={500}>{numCards}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Theme:</Text>
+                    <Text size="sm" fw={500}>{deckTheme || 'No theme'}</Text>
+                  </Group>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+          </Grid>
+          
+          {/* Generated Cards Display - Full Width Below Controls */}
+          {generatedCards.length > 0 && (
+            <Box mt="xl">
+              <Text fw={500} mb="md" size="lg">Generated Cards ({generatedCards.length}):</Text>
+              <Box style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '20px',
+                justifyContent: 'flex-start'
+              }}>
+                {generatedCards.map((cardText, index) => (
+                  <MTGCard key={index} cardData={cardText} index={index} />
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Paper>
 
         {/* Tips Section */}
         <Paper shadow="sm" p="lg" radius="md" mt="xl">
