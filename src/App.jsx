@@ -14,9 +14,11 @@ import {
   Checkbox,
   Badge,
   Box,
-  Alert
+  Alert,
+  useMantineColorScheme,
+   ActionIcon,
 } from '@mantine/core';
-import { IconWand, IconAlertCircle } from '@tabler/icons-react';
+import { IconWand, IconAlertCircle, IconSun, IconMoon } from '@tabler/icons-react';
 import image1 from './pictures/Magic cards/1-1000/001.jpg';
 import image2 from './pictures/Magic cards/1-1000/002.jpg';
 import image3 from './pictures/Magic cards/1-1000/003.jpg';
@@ -198,17 +200,17 @@ function MTGCard({ cardData, index }) {
       shadow="lg"
       style={{
         width: '280px',
-        border: '4px solid #000',
+        border: '4px solid var(--mantine-color-default-border)',
         borderRadius: '12px',
         overflow: 'hidden'
       }}
     >
       <Box p="md" style={{ background: bgGradient }}>
         <Group justify="space-between" mb="xs" align="flex-start">
-          <Text fw={700} size="md" style={{ flex: 1, lineHeight: 1.2 }}>
+          <Text fw={700} size="md" style={{ flex: 1, lineHeight: 1.2, color: '#000' }}>
             {parsed.name}
           </Text>
-          <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap' }}>
+          <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap', color: '#000' }}>
             {parsed.manaCost || '{?}'}
           </Text>
         </Group>
@@ -234,7 +236,8 @@ function MTGCard({ cardData, index }) {
           style={{ 
             borderBottom: '2px solid #000', 
             paddingBottom: '4px', 
-            marginBottom: '8px' 
+            marginBottom: '8px',
+            color: '#000'
           }}
         >
           {parsed.cardType}
@@ -244,12 +247,12 @@ function MTGCard({ cardData, index }) {
         <Box mb="sm" style={{ minHeight: '60px' }}>
           {parsed.rulesText ? (
             parsed.rulesText.split('\n').map((line, i) => (
-              <Text key={i} size="xs" mb={3}>
+              <Text key={i} size="xs" mb={3} style={{ color: '#000' }}>
                 {line}
               </Text>
             ))
           ) : (
-            <Text size="xs" c="dimmed" fs="italic">
+            <Text size="xs" c="dimmed" fs="italic" style={{ color: '#666' }}>
               No rules text
             </Text>
           )}
@@ -265,13 +268,13 @@ function MTGCard({ cardData, index }) {
               marginTop: '8px'
             }}
           >
-            <Text fw={700} size="xl">
+            <Text fw={700} size="xl" style={{ color: '#000' }}>
               {parsed.power}/{parsed.toughness}
             </Text>
           </Box>
         )}
         
-        <Badge size="xs" variant="light" mt="xs">
+        <Badge size="xs" variant="light" mt="xs" color="dark">
           Card #{index + 1}
         </Badge>
       </Box>
@@ -280,6 +283,8 @@ function MTGCard({ cardData, index }) {
 }
 
 function App() {
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  
   const [powerLevel, setPowerLevel] = useState('balanced');
   const [cardType, setCardType] = useState('Creature');
   const [cardName, setCardName] = useState('Lightning Drake');
@@ -373,16 +378,28 @@ function App() {
   };
   
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <Box style={{ minHeight: '100vh' }}>
       {/* Header */}
-      <Paper shadow="xs" p="xl" style={{ borderBottom: '1px solid #dee2e6' }}>
+      <Paper shadow="xs" p="xl" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
         <Container size="xl">
-          <Title order={1} ta="center" mb="xs">
-            Custom Card Generator
-          </Title>
-          <Text c="dimmed" ta="center">
-            Create custom cards and decks for Magic: The Gathering and other tabletop games
-          </Text>
+          <Group justify="space-between" align="center">
+            <Box style={{ flex: 1 }}>
+              <Title order={1} ta="center" mb="xs">
+                Custom Card Generator
+              </Title>
+              <Text c="dimmed" ta="center">
+                Create custom cards and decks for Magic: The Gathering and other tabletop games
+              </Text>
+            </Box>
+            <ActionIcon
+              variant="default"
+              onClick={toggleColorScheme}
+              size="lg"
+              aria-label="Toggle color scheme"
+            >
+              {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+            </ActionIcon>
+          </Group>
         </Container>
       </Paper>
 
@@ -523,7 +540,7 @@ function App() {
                   shadow="lg"
                   style={{
                     width: '260px',
-                    border: '4px solid #000',
+                    border: '4px solid var(--mantine-color-default-border)',
                     borderRadius: '12px',
                     overflow: 'hidden'
                   }}
@@ -535,8 +552,8 @@ function App() {
                     }}
                   >
                     <Group justify="space-between" mb="sm">
-                      <Text fw={700} size="lg">{cardName}</Text>
-                      <Text size="sm">{manaCost}</Text>
+                      <Text fw={700} size="lg" style={{ color: '#000' }}>{cardName}</Text>
+                      <Text size="sm" style={{ color: '#000' }}>{manaCost}</Text>
                     </Group>
                     
                     <Box
@@ -550,31 +567,36 @@ function App() {
                         justifyContent: 'center'
                       }}
                     >
-                      <Text size="sm" c="dimmed">Card Artwork</Text>
+                      <Text size="sm" c="dimmed" style={{ color: '#666' }}>Card Artwork</Text>
                     </Box>
                     
                     <Text 
                       size="sm" 
                       fw={600}
-                      style={{ borderBottom: '2px solid #000', paddingBottom: '4px', marginBottom: '8px' }}
+                      style={{ 
+                        borderBottom: '2px solid #000', 
+                        paddingBottom: '4px', 
+                        marginBottom: '8px',
+                        color: '#000'
+                      }}
                     >
                       {cardType} — {subtype}
                     </Text>
                     
                     <Box mb="sm" style={{ minHeight: '48px' }}>
                       {rulesText.split('\n').map((line, i) => (
-                        <Text key={i} size="xs" mb={4}>{line}</Text>
+                        <Text key={i} size="xs" mb={4} style={{ color: '#000' }}>{line}</Text>
                       ))}
                     </Box>
                     
                     {flavorText && (
-                      <Text size="xs" fs="italic" c="dimmed" mb="sm">
+                      <Text size="xs" fs="italic" mb="sm" style={{ color: '#666' }}>
                         {flavorText}
                       </Text>
                     )}
                     
                     {cardType === 'Creature' && (
-                      <Text ta="right" fw={700} size="lg">
+                      <Text ta="right" fw={700} size="lg" style={{ color: '#000' }}>
                         {power}/{toughness}
                       </Text>
                     )}
@@ -662,7 +684,7 @@ function App() {
                             height: '24px',
                             borderRadius: '50%',
                             backgroundColor: color.color,
-                            border: '2px solid #dee2e6'
+                            border: '2px solid var(--mantine-color-default-border)'
                           }}
                         />
                         <Box style={{ flex: 1 }}>
