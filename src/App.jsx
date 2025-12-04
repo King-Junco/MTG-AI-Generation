@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Container, 
   Title, 
@@ -16,9 +16,12 @@ import {
   Box,
   Alert,
   useMantineColorScheme,
-   ActionIcon,
+  ActionIcon,
 } from '@mantine/core';
 import { IconWand, IconAlertCircle, IconSun, IconMoon } from '@tabler/icons-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+
 import image1 from './pictures/Magic cards/1-1000/001.jpg';
 import image2 from './pictures/Magic cards/1-1000/002.jpg';
 import image3 from './pictures/Magic cards/1-1000/003.jpg';
@@ -78,28 +81,6 @@ const images = [
 const randomIndex = Math.floor(Math.random() * images.length);
 const randomIndex1 = Math.floor(Math.random() * 10);
 const randomElement = images[randomIndex];
-
-
-//render(<Button />, document.getElementById('container'));
-
-
-//useEffect(() => changeImage(), [])
-
-{/*export function RandomWelcomePicture() {
-  const [currentImageIndex, setCurrentImageIndex] = useState(Math.floor(Math.random() * images.length))
-  const changeImage = () => {
-    const randomNumber = Math.floor(Math.random() * images.length);
-    setCurrentImageIndex(randomNumber);
-  }
-  useEffect(() => changeImage(), [])
-
-  return (
-    <Image
-        source={images[currentImageIndex]}
-        style={styles.imageStyle}
-    />
-  )
-}*/}
 
 // ========== CONFIGURATION ==========
 const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
@@ -413,6 +394,15 @@ function App() {
   const [generatedCards, setGeneratedCards] = useState([]);
   const [error, setError] = useState(null);
 
+  // Refs for exporting
+  const singleCardRef = useRef(null); // preview card ref
+  const cardRefs = useRef([]); // refs to each generated-card wrapper
+
+  // helper to clear refs when deck changes
+  const resetCardRefs = (len) => {
+    cardRefs.current = Array(len).fill().map((_, i) => cardRefs.current[i] || null);
+  };
+
   const handleGenerateDeck = async () => {
     let prompt = deckTheme || 'creature';
 
@@ -457,8 +447,9 @@ function App() {
 
       if (result.success && result.cards) {
         setGeneratedCards(result.cards);
-      }
-      else {
+        // prepare refs for new cards
+        resetCardRefs(result.cards.length);
+      } else {
         throw new Error('Invalid response from backend');
       }
 
@@ -471,7 +462,133 @@ function App() {
       setIsGenerating(false);
     }
   };
-  
+
+  // ========== PDF export helpers ==========
+
+  // Export single preview card as one-page PDF
+  const exportSingleCard = async () => {
+    if (!singleCardRef.current) return;
+    try {
+      const canvas = await html2canvas(singleCardRef.current, { scale: 2, useCORS: true, allowTaint: true });
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const margin = 12;
+      const usableWidth = pdfWidth - (margin * 2);
+      const imgProps = { width: canvas.width, height: canvas.height };
+      const imgHeightMm = (canvas.height * usableWidth) / canvas.width;
+
+      const x = margin;
+      const y = (297 - imgHeightMm) / 2; // center vertically on A4 (297mm high)
+
+      pdf.addImage(imgData, 'PNG', x, y, usableWidth, imgHeightMm);
+      pdf.save('card-preview.pdf');
+    } catch (err) {
+      console.error('Error exporting single card:', err);
+      setError('Failed to export single card.');
+    }
+  };
+
+  // Export generated deck, 9 cards per A4 page (3x3)
+  const exportDeckNinePerPage = async () => {
+    if (!generatedCards || generatedCards.length === 0) return;
+
+    try {
+      const cards = cardRefs.current.slice(0, generatedCards.length);
+      // dimensions in px to aim for consistent card size
+      // We'll create an offscreen container per 9-card page, clone nodes into it, and render that container.
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const marginMm = 8;
+      const contentWidthMm = pdfWidth - marginMm * 2;
+      const contentHeightMm = pdfHeight - marginMm * 2;
+
+      // we'll render the whole 3x3 grid to fit content area
+      // For canvas rendering we use px sizes; estimate target px width for each card
+      // choose cardAspect from actual card DOM if available
+      const chunkSize = 9;
+      let pageIndex = 0;
+
+      for (let i = 0; i < cards.length; i += chunkSize) {
+        const chunk = cards.slice(i, i + chunkSize);
+
+        // create offscreen container
+        const off = document.createElement('div');
+        off.style.position = 'fixed';
+        off.style.left = '-10000px';
+        off.style.top = '0';
+        off.style.width = '900px'; // grid container width in px (3 cards of ~280 + gaps)
+        off.style.height = '1200px';
+        off.style.display = 'grid';
+        off.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        off.style.gridAutoRows = 'auto';
+        off.style.gap = '16px';
+        off.style.padding = '16px';
+        off.style.background = '#ffffff';
+        off.style.boxSizing = 'border-box';
+
+        // Copy up to 9 cards into offscreen container
+        chunk.forEach((cardEl, idx) => {
+          if (!cardEl) return;
+          const clone = cardEl.cloneNode(true);
+          // Ensure cloned card has consistent width to match grid
+          clone.style.width = '280px';
+          // center items inside grid cell
+          const wrapper = document.createElement('div');
+          wrapper.style.display = 'flex';
+          wrapper.style.justifyContent = 'center';
+          wrapper.style.alignItems = 'center';
+          wrapper.appendChild(clone);
+          off.appendChild(wrapper);
+        });
+
+        // fill remaining slots up to 9 with empty placeholders so layout is stable
+        const placeholders = 9 - chunk.length;
+        for (let p = 0; p < placeholders; p++) {
+          const ph = document.createElement('div');
+          ph.style.width = '280px';
+          ph.style.height = '420px';
+          off.appendChild(ph);
+        }
+
+        document.body.appendChild(off);
+
+        // render offscreen container to canvas
+        const canvas = await html2canvas(off, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#fff'
+        });
+
+        // remove the offscreen container
+        document.body.removeChild(off);
+
+        const imgData = canvas.toDataURL('image/png');
+
+        // fit the canvas image into PDF page area (with margins)
+        const usableWidth = contentWidthMm;
+        const ratio = canvas.width / canvas.height;
+        const imgWidthMm = usableWidth;
+        const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', marginMm, marginMm, imgWidthMm, imgHeightMm);
+
+        pageIndex++;
+        if (i + chunkSize < cards.length) {
+          pdf.addPage();
+        }
+      }
+
+      pdf.save('generated-deck.pdf');
+    } catch (err) {
+      console.error('Error exporting deck:', err);
+      setError('Failed to export deck.');
+    }
+  };
+
   return (
     <Box style={{ minHeight: '100vh' }}>
       {/* Header */}
@@ -642,6 +759,7 @@ function App() {
                     borderRadius: '12px',
                     overflow: 'hidden'
                   }}
+                  ref={singleCardRef} // preview card DOM available for export
                 >
                   <Box
                     p="md"
@@ -702,8 +820,14 @@ function App() {
                   </Box>
                 </Paper>
               </Box>
-            </Paper>
-          </Grid.Col>
+
+              {/* Export single preview button */}
+              <Button fullWidth mt="md" onClick={exportSingleCard}>
+                Export Preview Card (PDF)
+              </Button>
+            </Grid.Col>
+          </Grid>
+        </Paper>
 
           {/* Right Column - Deck Generator */}
           <Grid.Col span={{ base: 12, lg: 6 }}>
@@ -844,26 +968,68 @@ function App() {
                   Please select at least one color
                 </Text>
               )}
-              
-              {/* Generated Cards Display - Card Format */}
-              {generatedCards.length > 0 && (
-                <Box mt="lg">
-                  <Text fw={500} mb="md">Generated Cards ({generatedCards.length}):</Text>
-                  <Box style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: '16px',
-                    justifyContent: 'center'
-                  }}>
-                    {generatedCards.map((cardText, index) => (
-                      <MTGCard key={index} cardData={cardText} index={index} />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Paper>
-          </Grid.Col>
-        </Grid>
+            </Grid.Col>
+
+            {/* Right side - Preview/Info */}
+            <Grid.Col span={{ base: 12, lg: 5 }}>
+              <Paper withBorder p="md" style={{ position: 'sticky', top: '20px' }}>
+                <Text fw={500} mb="sm">Generator Settings</Text>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Selected Colors:</Text>
+                    <Text size="sm" fw={500}>
+                      {selectedColors.length > 0 
+                        ? selectedColors.map(c => colors.find(col => col.id === c)?.symbol).join(', ')
+                        : 'None'}
+                    </Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Number of Cards:</Text>
+                    <Text size="sm" fw={500}>{numCards}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Theme:</Text>
+                    <Text size="sm" fw={500}>{deckTheme || 'No theme'}</Text>
+                  </Group>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+          </Grid>
+          
+          {/* Generated Cards Display - Full Width Below Controls */}
+          {generatedCards.length > 0 && (
+            <Box mt="xl">
+              <Group position="apart" mb="md">
+                <Text fw={500} mb="0" size="lg">Generated Cards ({generatedCards.length}):</Text>
+                <Group>
+                  <Button onClick={exportDeckNinePerPage} disabled={generatedCards.length === 0}>
+                    Export Deck (9 per A4 page)
+                  </Button>
+                </Group>
+              </Group>
+
+              <Box style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '20px',
+                justifyContent: 'flex-start'
+              }}>
+                {generatedCards.map((cardText, index) => {
+                  // Provide a wrapper we can reference for exporting:
+                  return (
+                    <div
+                      key={index}
+                      ref={(el) => { cardRefs.current[index] = el; }}
+                      style={{ width: '280px' }}
+                    >
+                      <MTGCard cardData={cardText} index={index} />
+                    </div>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
+        </Paper>
 
         {/* Tips Section */}
         <Paper shadow="sm" p="lg" radius="md" mt="xl">
