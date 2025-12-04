@@ -122,7 +122,8 @@ function formatCardFromBackend(cardObj) {
 // Parse MTG card text into structured data
 function parseCardText(cardText) {
   const original = cardText.trim();
-  
+  const randomPower = Math.floor(Math.random() * 10);
+  const randomToughness = Math.floor(Math.random() * 10);
   // Initialize defaults
   let name = 'Unknown Card';
   let manaCost = '';
@@ -142,10 +143,10 @@ function parseCardText(cardText) {
   const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || // 32 format
                   original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||        // 3/2 format
                   original.match(/^(\d+)(\d+)\s/);                    // Start of line
-  if (ptMatch) {
-    power = ptMatch[1];
-    toughness = ptMatch[2];
-  }
+  //if (ptMatch) {
+  power = randomPower;
+  toughness = randomToughness;
+  //}
   
   // Extract card type (Creature, Instant, Sorcery, etc.)
   const creatureMatch = original.match(/Creature\s*[—-]\s*([A-Za-z\s]+?)(?=\s*[\.\n]|$)/i);
@@ -214,14 +215,17 @@ function parseCardText(cardText) {
     cardType,
     subtype,
     rulesText,
-    power,
-    toughness,
+    randomPower,
+    randomToughness,
     rawText: original
   };
 }
 
 // Card display component
 function MTGCard({ cardData, index }) {
+  
+  const randomPower1 = Math.floor(Math.random() * 10);
+  const randomToughness1 = Math.floor(Math.random() * 10);
   //const parsed = parseCardText(cardData);
   const randomIndex = Math.floor(Math.random() * images.length);
   const randomElement = images[randomIndex];
@@ -243,8 +247,8 @@ function MTGCard({ cardData, index }) {
       cardType: 'Unknown',
       subtype: '',
       rulesText: 'Invalid card data',
-      power: '',
-      toughness: '',
+      power: randomPower1,
+      toughness: randomToughness1,
       rawText: ''
     }
   }
@@ -328,7 +332,8 @@ function MTGCard({ cardData, index }) {
         </Box>
         
         {/* Power/Toughness */}
-        {parsed.power && parsed.toughness && (
+        
+        {randomPower1 && randomToughness1 && (
           <Box 
             style={{ 
               textAlign: 'right',
@@ -339,7 +344,7 @@ function MTGCard({ cardData, index }) {
             }}
           >
             <Text fw={700} size="xl">
-              {parsed.power}/{parsed.toughness}
+              {randomPower1}/{randomToughness1}
             </Text>
           </Box>
         )}
@@ -355,14 +360,16 @@ function MTGCard({ cardData, index }) {
 
 function App() {
   // Single card state
+  
+  const randomPower2 = Math.floor(Math.random() * 10);
+  const randomToughness2 = Math.floor(Math.random() * 10);
+
   const [powerLevel, setPowerLevel] = useState('balanced');
   const [cardType, setCardType] = useState('Creature');
   const [cardName, setCardName] = useState('Lightning Drake');
   const [manaCost, setManaCost] = useState('{2}{R}');
   const [rarity, setRarity] = useState('Uncommon');
   const [subtype, setSubtype] = useState('Dragon');
-  const [power, setPower] = useState('2');
-  const [toughness, setToughness] = useState('1');
   const [rulesText, setRulesText] = useState('Flying\nWhenever Lightning Drake attacks, it deals 1 damage to any target.');
   const [flavorText, setFlavorText] = useState('Born from storm clouds and fury.');
   
@@ -568,15 +575,13 @@ function App() {
                     <Grid.Col span={6}>
                       <TextInput
                         label="Power"
-                        value={power}
-                        onChange={(e) => setPower(e.target.value)}
+                        value={randomPower2}
                       />
                     </Grid.Col>
                     <Grid.Col span={6}>
                       <TextInput
                         label="Toughness"
-                        value={toughness}
-                        onChange={(e) => setToughness(e.target.value)}
+                        value={randomToughness2}
                       />
                     </Grid.Col>
                   </Grid>
@@ -671,7 +676,7 @@ function App() {
                     
                     {cardType === 'Creature' && (
                       <Text ta="right" fw={700} size="lg">
-                        {power}/{toughness}
+                        {randomPower2}/{randomToughness2}
                       </Text>
                     )}
                   </Box>
