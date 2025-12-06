@@ -28,73 +28,29 @@ import image3 from './pictures/Magic cards/1-1000/003.jpg';
 import image4 from './pictures/Magic cards/1-1000/004.jpg';
 import image5 from './pictures/Magic cards/1-1000/005.jpg';
 import image6 from './pictures/Magic cards/1-1000/006.jpg';
-import image7 from './pictures/Magic cards/1-1000/007.jpg';
-import image8 from './pictures/Magic cards/1-1000/008.jpg';
-import image9 from './pictures/Magic cards/1-1000/009.jpg';
-import image10 from './pictures/Magic cards/1-1000/010.jpg';
-import image11 from './pictures/Magic cards/1-1000/011.jpg';
-import image12 from './pictures/Magic cards/1-1000/012.jpg';
-import image14 from './pictures/Magic cards/1-1000/014.jpg';
-import image16 from './pictures/Magic cards/1-1000/016.jpg';
-import image17 from './pictures/Magic cards/1-1000/017.jpg';
-import image19 from './pictures/Magic cards/1-1000/019.jpg';
-import image20 from './pictures/Magic cards/1-1000/020.jpg';
-import image21 from './pictures/Magic cards/1-1000/021.jpg';
-import image22 from './pictures/Magic cards/1-1000/022.jpg';
-import image23 from './pictures/Magic cards/1-1000/023.jpg';
-import image24 from './pictures/Magic cards/1-1000/024.jpg';
-import image26 from './pictures/Magic cards/1-1000/026.jpg';
-import image27 from './pictures/Magic cards/1-1000/027.jpg';
-import image28 from './pictures/Magic cards/1-1000/028.jpg';
-import image29 from './pictures/Magic cards/1-1000/029.jpg';
-import image30 from './pictures/Magic cards/1-1000/030.jpg';
-import image31 from './pictures/Magic cards/1-1000/031.jpg';
-import image32 from './pictures/Magic cards/1-1000/032.jpg';
-import image33 from './pictures/Magic cards/1-1000/033.jpg';
-import image34 from './pictures/Magic cards/1-1000/034.jpg';
-import image35 from './pictures/Magic cards/1-1000/035.jpg';
-import image36 from './pictures/Magic cards/1-1000/036.jpg';
-import image37 from './pictures/Magic cards/1-1000/037.jpg';
-import image38 from './pictures/Magic cards/1-1000/038.jpg';
-import image39 from './pictures/Magic cards/1-1000/039.jpg';
-import image40 from './pictures/Magic cards/1-1000/040.jpg';
-import image41 from './pictures/Magic cards/1-1000/041.jpg';
-import image42 from './pictures/Magic cards/1-1000/042.jpg';
-import image43 from './pictures/Magic cards/1-1000/043.jpg';
-import image44 from './pictures/Magic cards/1-1000/044.jpg';
-import image45 from './pictures/Magic cards/1-1000/045.jpg';
-import image47 from './pictures/Magic cards/1-1000/047.jpg';
-import image48 from './pictures/Magic cards/1-1000/048.jpg';
-import image49 from './pictures/Magic cards/1-1000/049.jpg';
-import image50 from './pictures/Magic cards/1-1000/050.jpg';
-import image51 from './pictures/Magic cards/1-1000/051.jpg';
 
 const images = [
-  image1,  image2,  image3,  image4,  image5,  image6,  image7,  image8, 
-  image9,  image10, image11, image12, image14, image16, image17, image19, 
-  image20, image21, image22, image23, image24, image26, image27, image28,
-  image29, image30, image31, image32, image33, image34, image35, image36,
-  image37, image38, image39, image40, image41, image42, image43, image44,
-  image45, image47, image48, image49, image50, image51,
-
-]
+  image1,
+  image2,
+  image3,
+  image4,
+  image5,
+  image6,
+];
 const randomIndex = Math.floor(Math.random() * images.length);
-const randomIndex1 = Math.floor(Math.random() * 10);
 const randomElement = images[randomIndex];
 
 // ========== CONFIGURATION ==========
-const MAX_LENGTH = 100;  // Controls how much text the AI generates per card
-const TEMPERATURE = 0.8;  // Controls randomness (0.0 = deterministic, 1.0 = creative)
+const MAX_LENGTH = 100;
+const TEMPERATURE = 0.8;
 // ===================================
 
-
 function formatCardFromBackend(cardObj) {
-  // Backend already gives us structured data
   return {
     name: cardObj.name || 'Unknown Card',
     manaCost: cardObj.manaCost || '',
     cardType: cardObj.type || 'Unknown',
-    subtype: '', // Extract if needed
+    subtype: '',
     rulesText: cardObj.text || '',
     power: cardObj.power || '',
     toughness: cardObj.toughness || '',
@@ -102,12 +58,9 @@ function formatCardFromBackend(cardObj) {
   };
 }
 
-// Parse MTG card text into structured data
 function parseCardText(cardText) {
   const original = cardText.trim();
-  const randomPower = Math.floor(Math.random() * 10);
-  const randomToughness = Math.floor(Math.random() * 10);
-  // Initialize defaults
+  
   let name = 'Unknown Card';
   let manaCost = '';
   let cardType = 'Unknown';
@@ -116,22 +69,19 @@ function parseCardText(cardText) {
   let toughness = '';
   let rulesText = '';
   
-  // Extract mana cost (pattern: {X}{Y})
   const manaMatch = original.match(/\{[^\}]+\}/g);
   if (manaMatch) {
     manaCost = manaMatch.join('');
   }
   
-  // Extract power/toughness (patterns: 32, 3/2, or at start of text)
-  const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || // 32 format
-                  original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||        // 3/2 format
-                  original.match(/^(\d+)(\d+)\s/);                    // Start of line
-  //if (ptMatch) {
-  power = randomPower;
-  toughness = randomToughness;
-  //}
+  const ptMatch = original.match(/^(\d+|\*|X)(\d+|\*|X)(?!\/)/) || 
+                  original.match(/(\d+|\*|X)\/(\d+|\*|X)/) ||
+                  original.match(/^(\d+)(\d+)\s/);
+  if (ptMatch) {
+    power = ptMatch[1];
+    toughness = ptMatch[2];
+  }
   
-  // Extract card type (Creature, Instant, Sorcery, etc.)
   const creatureMatch = original.match(/Creature\s*[—-]\s*([A-Za-z\s]+?)(?=\s*[\.\n]|$)/i);
   if (creatureMatch) {
     cardType = 'Creature';
@@ -148,46 +98,37 @@ function parseCardText(cardText) {
     cardType = 'Land';
   }
   
-  // Extract card name (usually capitalized words at the end, or after card type)
-  // Try to find name after creature type or at the end
   const namePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$/;
   const nameMatch = original.match(namePattern);
   if (nameMatch && nameMatch[1].length > 2 && nameMatch[1].length < 50) {
     name = nameMatch[1];
   }
   
-  // Build rules text - remove mana cost, power/toughness, type line, and name
   let cleanedText = original;
   
-  // Remove mana cost
   if (manaCost) {
     cleanedText = cleanedText.replace(manaCost, '');
   }
   
-  // Remove power/toughness
   if (power && toughness) {
     cleanedText = cleanedText.replace(`${power}${toughness}`, '').replace(`${power}/${toughness}`, '');
   }
   
-  // Remove card type line
   if (creatureMatch) {
     cleanedText = cleanedText.replace(creatureMatch[0], '');
   } else {
     cleanedText = cleanedText.replace(/\b(Instant|Sorcery|Enchantment|Artifact|Land)\b/i, '');
   }
   
-  // Remove name
   if (name !== 'Unknown Card') {
     cleanedText = cleanedText.replace(name, '');
   }
   
-  // Clean up the rules text
   rulesText = cleanedText
-    .replace(/\s+/g, ' ')  // Normalize whitespace
-    .replace(/^\s*[\.\,\-]+\s*/, '')  // Remove leading punctuation
+    .replace(/\s+/g, ' ')
+    .replace(/^\s*[\.\,\-]+\s*/, '')
     .trim();
   
-  // If rules text is too short or empty, use original
   if (rulesText.length < 10) {
     rulesText = original;
   }
@@ -198,31 +139,22 @@ function parseCardText(cardText) {
     cardType,
     subtype,
     rulesText,
-    randomPower,
-    randomToughness,
+    power,
+    toughness,
     rawText: original
   };
 }
 
-// Card display component
 function MTGCard({ cardData, index }) {
-  
-  const randomPower1 = Math.floor(Math.random() * 10);
-  const randomToughness1 = Math.floor(Math.random() * 10);
-  //const parsed = parseCardText(cardData);
   const randomIndex = Math.floor(Math.random() * images.length);
   const randomElement = images[randomIndex];
   let parsed;
 
   if (typeof cardData === 'object' && cardData !== null) {
     parsed = formatCardFromBackend(cardData);
-  }
-
-  else if (typeof cardData === 'string') {
+  } else if (typeof cardData === 'string') {
     parsed = parseCardText(cardData);
-  }
-
-  else {
+  } else {
     console.error('Invalid card data:', cardData);
     parsed = {
       name: 'Error',
@@ -230,19 +162,18 @@ function MTGCard({ cardData, index }) {
       cardType: 'Unknown',
       subtype: '',
       rulesText: 'Invalid card data',
-      power: randomPower1,
-      toughness: randomToughness1,
+      power: '',
+      toughness: '',
       rawText: ''
     }
   }
   
-  // Determine color based on mana cost
-  let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)'; // Colorless/Artifact
-  if (parsed.manaCost.includes('{R}')) bgGradient = 'linear-gradient(to bottom, #fecaca, #fee2e2)'; // Red
-  if (parsed.manaCost.includes('{U}')) bgGradient = 'linear-gradient(to bottom, #bfdbfe, #dbeafe)'; // Blue
-  if (parsed.manaCost.includes('{G}')) bgGradient = 'linear-gradient(to bottom, #bbf7d0, #dcfce7)'; // Green
-  if (parsed.manaCost.includes('{W}')) bgGradient = 'linear-gradient(to bottom, #fef3c7, #fef9c3)'; // White
-  if (parsed.manaCost.includes('{B}')) bgGradient = 'linear-gradient(to bottom, #d1d5db, #e5e7eb)'; // Black
+  let bgGradient = 'linear-gradient(to bottom, #e5e7eb, #f3f4f6)';
+  if (parsed.manaCost.includes('{R}')) bgGradient = 'linear-gradient(to bottom, #fecaca, #fee2e2)';
+  if (parsed.manaCost.includes('{U}')) bgGradient = 'linear-gradient(to bottom, #bfdbfe, #dbeafe)';
+  if (parsed.manaCost.includes('{G}')) bgGradient = 'linear-gradient(to bottom, #bbf7d0, #dcfce7)';
+  if (parsed.manaCost.includes('{W}')) bgGradient = 'linear-gradient(to bottom, #fef3c7, #fef9c3)';
+  if (parsed.manaCost.includes('{B}')) bgGradient = 'linear-gradient(to bottom, #d1d5db, #e5e7eb)';
   
   return (
     <Paper
@@ -255,7 +186,6 @@ function MTGCard({ cardData, index }) {
       }}
     >
       <Box p="md" style={{ background: bgGradient }}>
-        {/* Header: Name and Mana Cost */}
         <Group justify="space-between" mb="xs" align="flex-start">
           <Text fw={700} size="md" style={{ flex: 1, lineHeight: 1.2, color: '#000' }}>
             {parsed.name}
@@ -265,8 +195,6 @@ function MTGCard({ cardData, index }) {
           </Text>
         </Group>
 
-        
-        {/* Image placeholder */}
         <Box
           mb="sm"
           style={{
@@ -279,13 +207,9 @@ function MTGCard({ cardData, index }) {
             border: '1px solid rgba(0,0,0,0.1)'
           }}
         >
-        {/*  <img src={ require('./src/pictures/Magic cards/1-1000/001.jpg')} /> 
-          import image1 from './pictures/Magic cards/1-1000/001.jpg';*/}
-          
-          <img src={randomElement} /> 
+          <img src={randomElement} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Card art" />
         </Box>
         
-        {/* Type Line */}
         <Text 
           size="sm" 
           fw={600}
@@ -300,7 +224,6 @@ function MTGCard({ cardData, index }) {
           {parsed.subtype && ` — ${parsed.subtype}`}
         </Text>
         
-        {/* Rules Text */}
         <Box mb="sm" style={{ minHeight: '60px' }}>
           {parsed.rulesText ? (
             parsed.rulesText.split('\n').map((line, i) => (
@@ -315,9 +238,7 @@ function MTGCard({ cardData, index }) {
           )}
         </Box>
         
-        {/* Power/Toughness */}
-        
-        {randomPower1 && randomToughness1 && (
+        {parsed.power && parsed.toughness && (
           <Box 
             style={{ 
               textAlign: 'right',
@@ -327,14 +248,13 @@ function MTGCard({ cardData, index }) {
               marginTop: '8px'
             }}
           >
-            <Text fw={700} size="xl">
-              {randomPower1}/{randomToughness1}
+            <Text fw={700} size="xl" style={{ color: '#000' }}>
+              {parsed.power}/{parsed.toughness}
             </Text>
           </Box>
         )}
         
-        {/* Card number badge */}
-        <Badge size="xs" variant="light" mt="xs">
+        <Badge size="xs" variant="light" mt="xs" color="dark">
           Card #{index + 1}
         </Badge>
       </Box>
@@ -343,21 +263,19 @@ function MTGCard({ cardData, index }) {
 }
 
 function App() {
-  // Single card state
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   
-  const randomPower2 = Math.floor(Math.random() * 10);
-  const randomToughness2 = Math.floor(Math.random() * 10);
-
   const [powerLevel, setPowerLevel] = useState('balanced');
   const [cardType, setCardType] = useState('Creature');
   const [cardName, setCardName] = useState('Lightning Drake');
   const [manaCost, setManaCost] = useState('{2}{R}');
   const [rarity, setRarity] = useState('Uncommon');
   const [subtype, setSubtype] = useState('Dragon');
+  const [power, setPower] = useState('2');
+  const [toughness, setToughness] = useState('1');
   const [rulesText, setRulesText] = useState('Flying\nWhenever Lightning Drake attacks, it deals 1 damage to any target.');
   const [flavorText, setFlavorText] = useState('Born from storm clouds and fury.');
   
-  // Deck generator state
   const [deckTheme, setDeckTheme] = useState('dragons');
   const [selectedColors, setSelectedColors] = useState(['red']);
   const [deckPowerLevel, setDeckPowerLevel] = useState('');
@@ -379,17 +297,6 @@ function App() {
     }
   };
   
-  // Generate AI prompt string - simpler format
-  const generatePromptString = () => {
-    // Just use color symbols, simpler for the AI
-    const colorSymbols = selectedColors.map(c => {
-      const color = colors.find(col => col.id === c);
-      return `{${color.symbol}}`;
-    }).join('');
-    
-    return colorSymbols || '{C}'; // {C} for colorless if no colors selected
-  };
-  
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCards, setGeneratedCards] = useState([]);
   const [error, setError] = useState(null);
@@ -406,7 +313,7 @@ function App() {
   const handleGenerateDeck = async () => {
     let prompt = deckTheme || 'creature';
 
-    const manaCost = selectedColors.map(c => {
+    const manaCostStr = selectedColors.map(c => {
       const color = colors.find(col => col.id === c);
       return `{${color.symbol}}`;
     }).join('');
@@ -430,7 +337,7 @@ function App() {
         },
         body: JSON.stringify({
           prompt: prompt,
-          mana_cost: manaCost,
+          mana_cost: manaCostStr,
           num_cards: parseInt(numCards),
           temperature: TEMPERATURE,
           max_length: MAX_LENGTH
@@ -453,12 +360,10 @@ function App() {
         throw new Error('Invalid response from backend');
       }
 
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error generating cards:', error);
       setError(error.message);
-    }
-    finally {
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -617,12 +522,13 @@ function App() {
 
       {/* Main Content */}
       <Container size="xl" py="xl">
-        <Grid>
-          {/* Left Column - Single Card Designer */}
-          <Grid.Col span={{ base: 12, lg: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md">
-              <Title order={2} mb="lg">Single Card Designer</Title>
-              
+        {/* Single Card Designer - Full Width on Top */}
+        <Paper shadow="sm" p="lg" radius="md" mb="xl">
+          <Title order={2} mb="lg">Single Card Designer</Title>
+          
+          <Grid>
+            {/* Left side - Form inputs */}
+            <Grid.Col span={{ base: 12, lg: 7 }}>
               {/* Power Level */}
               <Select
                 label="Power Level"
@@ -640,7 +546,6 @@ function App() {
               <Paper withBorder p="md" mb="md">
                 <Text fw={500} mb="md">Card Designer</Text>
                 
-                {/* Card Type Buttons */}
                 <Group mb="md">
                   {['Creature', 'Instant', 'Artifact'].map((type) => (
                     <Button
@@ -655,7 +560,6 @@ function App() {
                   ))}
                 </Group>
 
-                {/* Card Name */}
                 <TextInput
                   label="Card Name"
                   value={cardName}
@@ -663,7 +567,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Mana Cost and Rarity */}
                 <Grid mb="md">
                   <Grid.Col span={6}>
                     <TextInput
@@ -682,7 +585,6 @@ function App() {
                   </Grid.Col>
                 </Grid>
 
-                {/* Card Type and Subtype */}
                 <Grid mb="md">
                   <Grid.Col span={6}>
                     <Select
@@ -701,25 +603,25 @@ function App() {
                   </Grid.Col>
                 </Grid>
 
-                {/* Power and Toughness */}
                 {cardType === 'Creature' && (
                   <Grid mb="md">
                     <Grid.Col span={6}>
                       <TextInput
                         label="Power"
-                        value={randomPower2}
+                        value={power}
+                        onChange={(e) => setPower(e.target.value)}
                       />
                     </Grid.Col>
                     <Grid.Col span={6}>
                       <TextInput
                         label="Toughness"
-                        value={randomToughness2}
+                        value={toughness}
+                        onChange={(e) => setToughness(e.target.value)}
                       />
                     </Grid.Col>
                   </Grid>
                 )}
 
-                {/* Rules Text */}
                 <Textarea
                   label="Rules Text"
                   value={rulesText}
@@ -728,7 +630,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Flavor Text */}
                 <Textarea
                   label="Flavor Text (Optional)"
                   value={flavorText}
@@ -737,7 +638,6 @@ function App() {
                   mb="md"
                 />
 
-                {/* Card Artwork */}
                 <Stack gap="xs">
                   <Text size="sm" fw={500}>Card Artwork</Text>
                   <Button variant="default" fullWidth style={{ height: '60px' }}>
@@ -748,9 +648,11 @@ function App() {
                   </Text>
                 </Stack>
               </Paper>
+            </Grid.Col>
 
-              {/* Card Preview */}
-              <Box style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Right side - Card Preview */}
+            <Grid.Col span={{ base: 12, lg: 5 }}>
+              <Box style={{ display: 'flex', justifyContent: 'center', position: 'sticky', top: '20px' }}>
                 <Paper
                   shadow="lg"
                   style={{
@@ -772,7 +674,6 @@ function App() {
                       <Text size="sm" style={{ color: '#000' }}>{manaCost}</Text>
                     </Group>
                     
-                    {/* Image placeholder */}
                     <Box
                       mb="sm"
                       style={{
@@ -813,8 +714,8 @@ function App() {
                     )}
                     
                     {cardType === 'Creature' && (
-                      <Text ta="right" fw={700} size="lg">
-                        {randomPower2}/{randomToughness2}
+                      <Text ta="right" fw={700} size="lg" style={{ color: '#000' }}>
+                        {power}/{toughness}
                       </Text>
                     )}
                   </Box>
@@ -829,22 +730,22 @@ function App() {
           </Grid>
         </Paper>
 
-          {/* Right Column - Deck Generator */}
-          <Grid.Col span={{ base: 12, lg: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md">
+        {/* Deck Generator - Full Width Below */}
+        <Paper shadow="sm" p="lg" radius="md" mb="xl">
+          <Grid>
+            {/* Left side - Deck Generator Controls */}
+            <Grid.Col span={{ base: 12, lg: 7 }}>
               <Group mb="lg">
                 <IconWand size={20} />
                 <Title order={2}>Deck Generator</Title>
               </Group>
 
-              {/* Error Alert */}
               {error && (
                 <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red" mb="md" onClose={() => setError(null)} withCloseButton>
                   {error}
                 </Alert>
               )}
 
-              {/* Deck Theme */}
               <Select
                 label="Deck Theme (Optional)"
                 value={deckTheme}
@@ -863,7 +764,6 @@ function App() {
                 mb="lg"
               />
 
-              {/* Deck Colors */}
               <Stack gap="sm" mb="lg">
                 <Group justify="space-between">
                   <Text fw={500} size="sm">
@@ -923,7 +823,6 @@ function App() {
                 </Stack>
               </Stack>
 
-              {/* Power Level */}
               <Select
                 label="Power Level"
                 value={deckPowerLevel}
@@ -936,7 +835,6 @@ function App() {
                 mb="lg"
               />
 
-              {/* Number of Cards */}
               <TextInput
                 label="Number of Cards"
                 type="number"
@@ -950,7 +848,6 @@ function App() {
                 Rarity distribution: ~50% Common, ~30% Uncommon, ~15% Rare, ~5% Mythic
               </Text>
 
-              {/* Generate Button */}
               <Button 
                 fullWidth 
                 color="dark" 
